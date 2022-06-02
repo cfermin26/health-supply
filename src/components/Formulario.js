@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -10,6 +10,54 @@ import FloatingLabel from "react-bootstrap/FloatingLabel";
 import Button from "react-bootstrap/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import {gql, useLazyQuery, useMutation} from '@apollo/client';
+const SAVE_CLIENT = gql`
+  mutation Mutation($data: ClientInput!) {
+    createClient(data: $data) {
+      data {
+        attributes {
+          name
+          email
+          phone
+          message
+          country
+          interest
+        }
+      }
+    }
+  }
+`;
+const GET_CLIENT = gql`
+  query Clients($filters: ClientFiltersInput) {
+    clients(filters: $filters) {
+      data {
+        id
+      }
+    }
+  }
+`;
+const SAVE_ORDER = gql`
+  mutation Mutation($data: OrderInput!) {
+    createOrder(data: $data) {
+      data {
+        attributes {
+          quantity
+          client {
+            data {
+              id
+            }
+          }
+          producto {
+            data {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 
 const Formulario = () => {
   const { t } = useTranslation();
@@ -19,63 +67,109 @@ const Formulario = () => {
   const [pais, setPais] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [interes, setInteres] = useState("");
+  const [createClient] = useMutation(SAVE_CLIENT);
+  const [getClient,result] =  useLazyQuery(GET_CLIENT);
+  const [createOrder] = useMutation(SAVE_ORDER);
+  const products = JSON.parse(typeof window !== 'undefined' && window.localStorage.getItem("products"));
+
+  useEffect( () => {
+    if (result.data && products !== null ) {
+    saveOrder()
+    }
+
+  }, [result]);
 
   const cambioInteres = (e) => {
     setInteres(e.target.value);
   };
 
-  const handleSubmit = async (e) => {
+  const saveStrapi = async (e) => {
     e.preventDefault();
-    // setActiveSpinner(true);
-    // let cid = cuid();
-    const dataForm = new FormData();
-    dataForm.append("nombres", nombres);
-    dataForm.append("telefono", telefono);
-    dataForm.append("email", email);
-    dataForm.append("pais", pais);
-    dataForm.append("interes", interes);
-    dataForm.append("mensaje", mensaje);
-    dataForm.append("estado", 1);
-    const respuesta = await axios.post(
-      "https://kernel.inkside.studio/api/mensajes",
-      dataForm
-    );
-    if (respuesta.status === 200) {
-      if (respuesta.data.status === "Ok") {
+      await saveClient()
+  }
+
+  const saveClient = async () => {
+    await createClient({
+      variables: {
+        data: {
+          name: nombres,
+          email: email,
+          phone: telefono,
+          country: pais,
+          message: mensaje,
+          interest: interes,
+          codeMail: products? products:{},
+        }
+      }
+    })
+
+    await getClient({
+      variables: {
+        filters: {
+          name: {
+            eq: nombres,
+          },
+          email: {
+            eq: email,
+          },
+          phone: {
+            eq: telefono,
+          },
+          country: {
+            eq: pais,
+          },
+          message: {
+            eq: mensaje,
+          },
+          interest: {
+            eq: interes,
+          }
+        }
+      }
+    });
+  }
+  const saveOrder = () => {
+  products.forEach((product) => {
+    createOrder({
+      variables: {
+        data: {
+          quantity: product.quantity,
+          client: result.data.clients.data[0].id,
+          producto: product.strapi_id,
+        }
+      }
+    })
+  })
+    console.log(result)
+    msgFormStatus()
+
+  }
+
+   const msgFormStatus =  () => {
+      if (result.error) {
+        Swal.fire({
+          title: t("form.errorTitle"),
+          text: t("form.errorText"),
+          showCloseButton: true,
+          icon: "error",
+        });
+      } else {
         setNombres("");
         setEmail("");
         setTelefono("");
         setPais("");
         setMensaje("");
         setInteres("");
-        e.target.reset();
         // setActiveSpinner(false);
         // handleClose();
         Swal.fire({
-          title: "¡Gracias por confiar en nosotros!",
-          text: "Pronto nos pondremos en contacto con usted.",
+          title: t("form.successTitle"),
+          text: t("form.successText"),
           showCloseButton: true,
           icon: "success",
         });
-      } else {
-        // setActiveSpinner(false);
-        Swal.fire({
-          title: "Error al enviar la información",
-          text: "Intente en unos minutos...",
-          showCloseButton: true,
-          icon: "error",
-        });
       }
-    } else {
-      // setActiveSpinner(false);
-      Swal.fire({
-        title: "Error al enviar informacion",
-        text: "Intente en unos minutos...",
-        showCloseButton: true,
-        icon: "error",
-      });
-    }
-  };
+  }
 
   return (
     <Container>
@@ -99,7 +193,7 @@ const Formulario = () => {
                 <Form
                   className="contacto-form"
                   id="contacto"
-                  onSubmit={handleSubmit}
+                  onSubmit={saveStrapi}
                 >
                   <Row className="mb-3">
                     <Col md={6}>
@@ -196,7 +290,7 @@ const Formulario = () => {
                   </Row>
 
                   <Row className="mt-4 mt-md-5 text-center">
-                    <Col md={12} controlId="formGridPassword mx-auto">
+                    <Col md={12} controlid="formGridPassword mx-auto">
                       <Button
                         variant="primary"
                         type="submit"

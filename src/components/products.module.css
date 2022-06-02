@@ -1,14 +1,24 @@
 .container {
   background-color: #f5f6fa;
-  padding: 20px;
+  padding: 40px;
 }
 .containerActions {
   display: grid;
-  grid-template-columns: 2.2fr 0.8fr;
-  grid-template-rows: 1fr;
-  gap: 0px 0px;
-  grid-template-areas: ". .";
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
+
+@media (max-width: 1200px) {
+  .containerActions {
+    justify-items: center;
+    gap: 23px;
+  }
+  .containerSearch{
+    margin-top: 15px;
+  }
+  
+}
+  
+
 .title {
   font-size: 23px;
   font-weight: 600;
@@ -20,6 +30,7 @@
   display: flex;
   width: 100%;
   justify-content: center;
+  text-align: center;
 }
 input[type="text"] {
   background: #ffffff;
@@ -72,7 +83,6 @@ input[type="text"] {
 }
 
 .dropdownContent {
-  display: none;
   position: absolute;
   background-color: #f9f9f9;
   min-width: 160px;
@@ -101,7 +111,7 @@ input[type="text"] {
 }
 .containerFilter {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-end; 
 }
 .chevron {
   font-size: 50px;

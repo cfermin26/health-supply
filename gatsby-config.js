@@ -13,17 +13,32 @@ module.exports = {
     {
       resolve: "gatsby-source-strapi",
       options: {
-        apiURL: process.env.STRAPI_API_URL || "http://localhost:1337",
+        apiURL: process.env.STRAPI_API_URL,
         accessToken: process.env.STRAPI_TOKEN,
         collectionTypes: [
           {
             singularName: "product",
+            pluginOptions: {
+              i18n: {
+                locale: "all", // Fetch all localizations
+              },
+            },
           },
           {
             singularName: "label",
+            pluginOptions: {
+              i18n: {
+                locale: "all", // Fetch all localizations
+              },
+            },
           },
           {
             singularName: "speciality",
+            pluginOptions: {
+              i18n: {
+                locale: "all", // Fetch all localizations
+              },
+            },
           },
         ],
         singleTypes: [],
@@ -39,6 +54,7 @@ module.exports = {
         includeInDevelopment: false,
       },
     },
+'gatsby-plugin-apollo',
     "gatsby-plugin-react-helmet",
     "gatsby-plugin-sitemap",
     {
